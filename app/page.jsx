@@ -1,25 +1,31 @@
 "use client";
 import { useState, useEffect } from "react";
 export default function Home() {
- const [aba, setAba] = useState("entrada");
+ const [aba, setAba] = useState<"entrada" | "saida">("entrada");
+ // =========================
  // ENTRADA
+ // =========================
  const [placa, setPlaca] = useState("");
  const [tipo, setTipo] = useState("carro_pequeno");
  const [marca, setMarca] = useState("");
  const [modelo, setModelo] = useState("");
- const [marcas, setMarcas] = useState([]);
- const [modelos, setModelos] = useState([]);
+ const [marcas, setMarcas] = useState<any[]>([]);
+ const [modelos, setModelos] = useState<any[]>([]);
  const [loading, setLoading] = useState(false);
+ // =========================
  // SAÍDA
+ // =========================
  const [ticketId, setTicketId] = useState("");
  const [placaSaida, setPlacaSaida] = useState("");
- const [modo, setModo] = useState("auto");
+ const [modo, setModo] = useState<"auto" | "manual">("auto");
  const [valorManual, setValorManual] = useState("");
  const getApiTipo = () => {
    if (tipo === "moto") return "motos";
    return "carros";
  };
- // MARCAS
+ // =========================
+ // BUSCAR MARCAS
+ // =========================
  useEffect(() => {
    async function buscarMarcas() {
      try {
@@ -37,7 +43,9 @@ export default function Home() {
    setModelo("");
    setModelos([]);
  }, [tipo]);
- // MODELOS
+ // =========================
+ // BUSCAR MODELOS
+ // =========================
  useEffect(() => {
    if (!marca) return;
    async function buscarModelos() {
@@ -53,9 +61,14 @@ export default function Home() {
    }
    buscarModelos();
  }, [marca]);
- // ENTRADA
+ // =========================
+ // GERAR TICKET
+ // =========================
  const gerarTicket = async () => {
-   if (!placa) return alert("Digite a placa");
+   if (!placa) {
+     alert("Digite a placa");
+     return;
+   }
    setLoading(true);
    try {
      const res = await fetch(
@@ -77,6 +90,7 @@ export default function Home() {
        }
      );
      const data = await res.json();
+     if (!res.ok) throw new Error();
      alert(`✅ Ticket gerado! ID: ${data.ticket_id}`);
      setPlaca("");
      setMarca("");
@@ -87,54 +101,51 @@ export default function Home() {
      setLoading(false);
    }
  };
- // SAÍDA
+ // =========================
+ // SAÍDA (CORRIGIDO)
+ // =========================
  const gerarSaida = async () => {
    if (!ticketId && !placaSaida) {
      alert("Digite ID ou placa");
      return;
    }
    try {
-const gerarSaida = async () => {
- if (!ticketId && !placaSaida) {
-   alert("Digite ID ou placa");
-   return;
- }
- try {
-   const res = await fetch(
-     "https://estacionamento-production-fe0e.up.railway.app/saida",
-     {
-       method: "POST",
-       headers: { "Content-Type": "application/json" },
-       body: JSON.stringify({
-         ticket_id: ticketId || null,
-         placa: placaSaida || null,
-         modo,
-         valor_manual: valorManual || null,
-       }),
+     const res = await fetch(
+       "https://estacionamento-production-fe0e.up.railway.app/saida",
+       {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({
+           ticket_id: ticketId || null,
+           placa: placaSaida || null,
+           modo,
+           valor_manual: valorManual || null,
+         }),
+       }
+     );
+     const data = await res.json();
+     console.log("RESPOSTA API:", data);
+     const valor =
+       data?.valor ||
+       data?.price ||
+       data?.valor_total ||
+       data?.data?.valor ||
+       null;
+     if (valor !== null) {
+       alert(`💰 Valor: R$ ${valor}`);
+     } else if (data?.erro || data?.error) {
+       alert(`❌ ${data.erro || data.error}`);
+     } else {
+       alert("Erro ao calcular valor");
      }
-   );
-   const data = await res.json();
-   // 🔍 DEBUG (importante pra você ver o retorno real)
-   console.log("RESPOSTA API:", data);
-   // ✅ Tenta pegar o valor de várias formas possíveis
-   const valor =
-     data?.valor ||
-     data?.price ||
-     data?.valor_total ||
-     data?.data?.valor ||
-     null;
-   if (valor !== null) {
-     alert(`💰 Valor: R$ ${valor}`);
-   } else if (data?.erro || data?.error) {
-     alert(`❌ ${data.erro || data.error}`);
-   } else {
-     alert("Erro ao calcular valor");
+   } catch (err) {
+     console.error(err);
+     alert("Erro na saída");
    }
- } catch (err) {
-   console.error(err);
-   alert("Erro na saída");
- }
-};
+ };
+ // =========================
+ // UI
+ // =========================
  return (
 <div style={styles.container}>
 <div style={styles.tabs}>
@@ -153,7 +164,7 @@ const gerarSaida = async () => {
 </div>
      {aba === "entrada" && (
 <div style={styles.card}>
-<h3>Entrada de Veículo</h3>
+<h3>Entrada</h3>
 <input
            placeholder="Placa"
            value={placa}
@@ -180,7 +191,7 @@ const gerarSaida = async () => {
            onChange={(e) => setMarca(e.target.value)}
            style={styles.input}
 >
-<option value="">Selecione a marca</option>
+<option value="">Marca</option>
            {marcas.map((m) => (
 <option key={m.codigo} value={m.codigo}>
                {m.nome}
@@ -192,7 +203,7 @@ const gerarSaida = async () => {
            onChange={(e) => setModelo(e.target.value)}
            style={styles.input}
 >
-<option value="">Selecione o modelo</option>
+<option value="">Modelo</option>
            {modelos.map((m) => (
 <option key={m.codigo} value={m.nome}>
                {m.nome}
@@ -249,7 +260,10 @@ const gerarSaida = async () => {
 </div>
  );
 }
-const styles = {
+// =========================
+// ESTILO
+// =========================
+const styles: any = {
  container: {
    height: "100vh",
    background: "#0f0f0f",
