@@ -1,34 +1,25 @@
 "use client";
 import { useState, useEffect } from "react";
 export default function Home() {
- const [aba, setAba] = useState<"entrada" | "saida">("entrada");
- // =========================
+ const [aba, setAba] = useState("entrada");
  // ENTRADA
- // =========================
  const [placa, setPlaca] = useState("");
  const [tipo, setTipo] = useState("carro_pequeno");
  const [marca, setMarca] = useState("");
  const [modelo, setModelo] = useState("");
- const [marcas, setMarcas] = useState<any[]>([]);
- const [modelos, setModelos] = useState<any[]>([]);
+ const [marcas, setMarcas] = useState([]);
+ const [modelos, setModelos] = useState([]);
  const [loading, setLoading] = useState(false);
- // =========================
  // SAÍDA
- // =========================
  const [ticketId, setTicketId] = useState("");
  const [placaSaida, setPlacaSaida] = useState("");
- const [modo, setModo] = useState<"auto" | "manual">("auto");
+ const [modo, setModo] = useState("auto");
  const [valorManual, setValorManual] = useState("");
- // =========================
- // API BASE
- // =========================
  const getApiTipo = () => {
    if (tipo === "moto") return "motos";
    return "carros";
  };
- // =========================
- // BUSCAR MARCAS
- // =========================
+ // MARCAS
  useEffect(() => {
    async function buscarMarcas() {
      try {
@@ -46,9 +37,7 @@ export default function Home() {
    setModelo("");
    setModelos([]);
  }, [tipo]);
- // =========================
- // BUSCAR MODELOS
- // =========================
+ // MODELOS
  useEffect(() => {
    if (!marca) return;
    async function buscarModelos() {
@@ -64,14 +53,9 @@ export default function Home() {
    }
    buscarModelos();
  }, [marca]);
- // =========================
- // GERAR TICKET
- // =========================
+ // ENTRADA
  const gerarTicket = async () => {
-   if (!placa) {
-     alert("Digite a placa");
-     return;
-   }
+   if (!placa) return alert("Digite a placa");
    setLoading(true);
    try {
      const res = await fetch(
@@ -92,7 +76,6 @@ export default function Home() {
          }),
        }
      );
-     if (!res.ok) throw new Error();
      const data = await res.json();
      alert(`✅ Ticket gerado! ID: ${data.ticket_id}`);
      setPlaca("");
@@ -104,9 +87,7 @@ export default function Home() {
      setLoading(false);
    }
  };
- // =========================
  // SAÍDA
- // =========================
  const gerarSaida = async () => {
    if (!ticketId && !placaSaida) {
      alert("Digite ID ou placa");
@@ -132,12 +113,8 @@ export default function Home() {
      alert("Erro na saída");
    }
  };
- // =========================
- // UI
- // =========================
  return (
 <div style={styles.container}>
-     {/* ABAS */}
 <div style={styles.tabs}>
 <button
          style={aba === "entrada" ? styles.activeTab : styles.tab}
@@ -152,9 +129,6 @@ export default function Home() {
          Saída
 </button>
 </div>
-     {/* ========================= */}
-     {/* ENTRADA */}
-     {/* ========================= */}
      {aba === "entrada" && (
 <div style={styles.card}>
 <h3>Entrada de Veículo</h3>
@@ -164,7 +138,6 @@ export default function Home() {
            onChange={(e) => setPlaca(e.target.value)}
            style={styles.input}
          />
-         {/* TIPO */}
 <div style={styles.tipoContainer}>
            {["carro_pequeno", "carro_grande", "moto"].map((t) => (
 <button
@@ -180,7 +153,6 @@ export default function Home() {
 </button>
            ))}
 </div>
-         {/* MARCA */}
 <select
            value={marca}
            onChange={(e) => setMarca(e.target.value)}
@@ -193,28 +165,23 @@ export default function Home() {
 </option>
            ))}
 </select>
-         {/* MODELO */}
 <select
            value={modelo}
            onChange={(e) => setModelo(e.target.value)}
            style={styles.input}
 >
 <option value="">Selecione o modelo</option>
-           {modelos.length > 0 &&
-             modelos.map((m) => (
+           {modelos.map((m) => (
 <option key={m.codigo} value={m.nome}>
-                 {m.nome}
+               {m.nome}
 </option>
-             ))}
+           ))}
 </select>
 <button style={styles.btn} onClick={gerarTicket}>
            {loading ? "Gerando..." : "Gerar Ticket"}
 </button>
 </div>
      )}
-     {/* ========================= */}
-     {/* SAÍDA */}
-     {/* ========================= */}
      {aba === "saida" && (
 <div style={styles.card}>
 <h3>Saída</h3>
@@ -230,7 +197,6 @@ export default function Home() {
            onChange={(e) => setPlacaSaida(e.target.value)}
            style={styles.input}
          />
-         {/* MODO */}
 <div style={styles.tipoContainer}>
 <button
              style={modo === "auto" ? styles.tipoAtivo : styles.tipoBtn}
@@ -261,10 +227,7 @@ export default function Home() {
 </div>
  );
 }
-// =========================
-// ESTILO
-// =========================
-const styles: any = {
+const styles = {
  container: {
    height: "100vh",
    background: "#0f0f0f",
