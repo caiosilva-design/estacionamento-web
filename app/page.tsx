@@ -9,8 +9,8 @@ export default function Home() {
  const [tipo, setTipo] = useState("carro_pequeno");
  const [marca, setMarca] = useState("");
  const [modelo, setModelo] = useState("");
- const [marcas, setMarcas] = useState([]);
- const [modelos, setModelos] = useState([]);
+ const [marcas, setMarcas] = useState<any[]>([]);
+ const [modelos, setModelos] = useState<any[]>([]);
  const [loading, setLoading] = useState(false);
  // =========================
  // SAÍDA
