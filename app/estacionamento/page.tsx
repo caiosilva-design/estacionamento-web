@@ -1,99 +1,337 @@
 "use client";
-import { useState } from "react";
-export default function Estacionamento() {
+import { useState, useEffect } from "react";
+export default function Home() {
+ const [aba, setAba] = useState<"entrada" | "saida">("entrada");
+ // =========================
+ // ENTRADA
+ // =========================
  const [placa, setPlaca] = useState("");
+ const [tipo, setTipo] = useState("carro_pequeno");
  const [marca, setMarca] = useState("");
  const [modelo, setModelo] = useState("");
- const [tipo, setTipo] = useState("pequeno");
+ const [marcas, setMarcas] = useState<any[]>([]);
+ const [modelos, setModelos] = useState<any[]>([]);
+ const [loading, setLoading] = useState(false);
+ // =========================
+ // SAÍDA
+ // =========================
  const [ticketId, setTicketId] = useState("");
- const [resultado, setResultado] = useState<any>(null);
- const API = "https://SEU-BACKEND.railway.app";
- // 🟢 ENTRADA
+ const [placaSaida, setPlacaSaida] = useState("");
+ const [modo, setModo] = useState<"auto" | "manual">("auto");
+ const [valorManual, setValorManual] = useState("");
+ // =========================
+ // API BASE
+ // =========================
+ const getApiTipo = () => {
+   if (tipo === "moto") return "motos";
+   return "carros";
+ };
+ // =========================
+ // BUSCAR MARCAS
+ // =========================
+ useEffect(() => {
+   async function buscarMarcas() {
+     try {
+       const res = await fetch(
+         `https://parallelum.com.br/fipe/api/v1/${getApiTipo()}/marcas`
+       );
+       const data = await res.json();
+       setMarcas(data || []);
+     } catch {
+       setMarcas([]);
+     }
+   }
+   buscarMarcas();
+   setMarca("");
+   setModelo("");
+   setModelos([]);
+ }, [tipo]);
+ // =========================
+ // BUSCAR MODELOS
+ // =========================
+ useEffect(() => {
+   if (!marca) return;
+   async function buscarModelos() {
+     try {
+       const res = await fetch(
+         `https://parallelum.com.br/fipe/api/v1/${getApiTipo()}/marcas/${marca}/modelos`
+       );
+       const data = await res.json();
+       setModelos(data?.modelos || []);
+     } catch {
+       setModelos([]);
+     }
+   }
+   buscarModelos();
+ }, [marca]);
+ // =========================
+ // GERAR TICKET
+ // =========================
  const gerarTicket = async () => {
-   const res = await fetch(`${API}/entrada`, {
-     method: "POST",
-     headers: {
-       "Content-Type": "application/json",
-     },
-     body: JSON.stringify({
-       placa,
-       marca,
-       modelo,
-       tipo_veiculo: tipo,
-     }),
-   });
-   const data = await res.json();
-   alert(`Ticket gerado: ${data.ticket_id}`);
+   if (!placa) {
+     alert("Digite a placa");
+     return;
+   }
+   setLoading(true);
+   try {
+     const res = await fetch(
+       "https://estacionamento-production-fe0e.up.railway.app/entrada",
+       {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({
+           placa,
+           marca,
+           modelo,
+           tipo_veiculo:
+             tipo === "carro_pequeno"
+               ? "pequeno"
+               : tipo === "carro_grande"
+               ? "grande"
+               : "moto",
+         }),
+       }
+     );
+     if (!res.ok) throw new Error();
+     const data = await res.json();
+     alert(`✅ Ticket gerado! ID: ${data.ticket_id}`);
+     setPlaca("");
+     setMarca("");
+     setModelo("");
+   } catch {
+     alert("Erro ao gerar ticket");
+   } finally {
+     setLoading(false);
+   }
  };
- // 🔴 SAÍDA
- const calcularSaida = async () => {
-   const res = await fetch(`${API}/saida`, {
-     method: "POST",
-     headers: {
-       "Content-Type": "application/json",
-     },
-     body: JSON.stringify({
-       ticket_id: Number(ticketId),
-     }),
-   });
-   const data = await res.json();
-   setResultado(data);
+ // =========================
+ // SAÍDA
+ // =========================
+ const gerarSaida = async () => {
+   if (!ticketId && !placaSaida) {
+     alert("Digite ID ou placa");
+     return;
+   }
+   try {
+     const res = await fetch(
+       "https://estacionamento-production-fe0e.up.railway.app/saida",
+       {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({
+           ticket_id: ticketId || null,
+           placa: placaSaida || null,
+           modo,
+           valor_manual: valorManual || null,
+         }),
+       }
+     );
+     const data = await res.json();
+     alert(`💰 Valor: R$ ${data.valor}`);
+   } catch {
+     alert("Erro na saída");
+   }
  };
+ // =========================
+ // UI
+ // =========================
  return (
-<div
-     style={{
-       minHeight: "100vh",
-       background: "#000",
-       color: "white",
-       padding: "120px 20px",
-     }}
+<div style={styles.container}>
+     {/* ABAS */}
+<div style={styles.tabs}>
+<button
+         style={aba === "entrada" ? styles.activeTab : styles.tab}
+         onClick={() => setAba("entrada")}
 >
-<h1 style={{ marginBottom: "30px" }}>🅿️ Estacionamento</h1>
-     {/* 🟢 ENTRADA */}
-<div style={{ marginBottom: "40px" }}>
-<h2>Entrada</h2>
+         Entrada
+</button>
+<button
+         style={aba === "saida" ? styles.activeTab : styles.tab}
+         onClick={() => setAba("saida")}
+>
+         Saída
+</button>
+</div>
+     {/* ========================= */}
+     {/* ENTRADA */}
+     {/* ========================= */}
+     {aba === "entrada" && (
+<div style={styles.card}>
+<h3>Entrada de Veículo</h3>
 <input
-         placeholder="Placa"
-         value={placa}
-         onChange={(e) => setPlaca(e.target.value)}
-       />
-<input
-         placeholder="Marca"
-         value={marca}
-         onChange={(e) => setMarca(e.target.value)}
-       />
-<input
-         placeholder="Modelo"
-         value={modelo}
-         onChange={(e) => setModelo(e.target.value)}
-       />
-<select value={tipo} onChange={(e) => setTipo(e.target.value)}>
-<option value="pequeno">Carro pequeno</option>
-<option value="grande">Carro grande</option>
-<option value="moto">Moto</option>
+           placeholder="Placa"
+           value={placa}
+           onChange={(e) => setPlaca(e.target.value)}
+           style={styles.input}
+         />
+         {/* TIPO */}
+<div style={styles.tipoContainer}>
+           {["carro_pequeno", "carro_grande", "moto"].map((t) => (
+<button
+               key={t}
+               onClick={() => setTipo(t)}
+               style={tipo === t ? styles.tipoAtivo : styles.tipoBtn}
+>
+               {t === "carro_pequeno"
+                 ? "Carro Pequeno"
+                 : t === "carro_grande"
+                 ? "Carro Grande"
+                 : "Moto"}
+</button>
+           ))}
+</div>
+         {/* MARCA */}
+<select
+           value={marca}
+           onChange={(e) => setMarca(e.target.value)}
+           style={styles.input}
+>
+<option value="">Selecione a marca</option>
+           {marcas.map((m) => (
+<option key={m.codigo} value={m.codigo}>
+               {m.nome}
+</option>
+           ))}
 </select>
-<button className="btnGold" onClick={gerarTicket}>
-         Gerar Ticket
+         {/* MODELO */}
+<select
+           value={modelo}
+           onChange={(e) => setModelo(e.target.value)}
+           style={styles.input}
+>
+<option value="">Selecione o modelo</option>
+           {modelos.length > 0 &&
+             modelos.map((m) => (
+<option key={m.codigo} value={m.nome}>
+                 {m.nome}
+</option>
+             ))}
+</select>
+<button style={styles.btn} onClick={gerarTicket}>
+           {loading ? "Gerando..." : "Gerar Ticket"}
 </button>
 </div>
-     {/* 🔴 SAÍDA */}
-<div>
-<h2>Saída</h2>
+     )}
+     {/* ========================= */}
+     {/* SAÍDA */}
+     {/* ========================= */}
+     {aba === "saida" && (
+<div style={styles.card}>
+<h3>Saída</h3>
 <input
-         placeholder="ID do ticket"
-         value={ticketId}
-         onChange={(e) => setTicketId(e.target.value)}
-       />
-<button className="btnGold" onClick={calcularSaida}>
-         Calcular Saída
+           placeholder="ID do Ticket"
+           value={ticketId}
+           onChange={(e) => setTicketId(e.target.value)}
+           style={styles.input}
+         />
+<input
+           placeholder="OU Placa"
+           value={placaSaida}
+           onChange={(e) => setPlacaSaida(e.target.value)}
+           style={styles.input}
+         />
+         {/* MODO */}
+<div style={styles.tipoContainer}>
+<button
+             style={modo === "auto" ? styles.tipoAtivo : styles.tipoBtn}
+             onClick={() => setModo("auto")}
+>
+             Auto
 </button>
-       {resultado && (
-<div style={{ marginTop: "20px" }}>
-<p>Ticket: {resultado.ticket_id}</p>
-<p>Valor: R$ {resultado.valor}</p>
+<button
+             style={modo === "manual" ? styles.tipoAtivo : styles.tipoBtn}
+             onClick={() => setModo("manual")}
+>
+             Manual
+</button>
 </div>
-       )}
+         {modo === "manual" && (
+<input
+             placeholder="Valor manual"
+             value={valorManual}
+             onChange={(e) => setValorManual(e.target.value)}
+             style={styles.input}
+           />
+         )}
+<button style={styles.btn} onClick={gerarSaida}>
+           Finalizar
+</button>
 </div>
+     )}
 </div>
  );
 }
+// =========================
+// ESTILO
+// =========================
+const styles: any = {
+ container: {
+   height: "100vh",
+   background: "#0f0f0f",
+   display: "flex",
+   flexDirection: "column",
+   alignItems: "center",
+   justifyContent: "center",
+   color: "#fff",
+ },
+ card: {
+   background: "#1a1a1a",
+   padding: 20,
+   borderRadius: 10,
+   width: 300,
+   display: "flex",
+   flexDirection: "column",
+   gap: 10,
+ },
+ input: {
+   padding: 10,
+   borderRadius: 6,
+   border: "1px solid #444",
+   background: "#fff",
+   color: "#000",
+ },
+ btn: {
+   background: "#FFD700",
+   padding: 12,
+   border: "none",
+   borderRadius: 6,
+   cursor: "pointer",
+   fontWeight: "bold",
+ },
+ tabs: {
+   display: "flex",
+   marginBottom: 20,
+ },
+ tab: {
+   padding: 10,
+   background: "#555",
+   border: "none",
+   cursor: "pointer",
+ },
+ activeTab: {
+   padding: 10,
+   background: "#FFD700",
+   border: "none",
+   cursor: "pointer",
+ },
+ tipoContainer: {
+   display: "flex",
+   gap: 5,
+ },
+ tipoBtn: {
+   flex: 1,
+   padding: 10,
+   background: "#555",
+   border: "none",
+   color: "#fff",
+   cursor: "pointer",
+ },
+ tipoAtivo: {
+   flex: 1,
+   padding: 10,
+   background: "#FFD700",
+   border: "none",
+   color: "#000",
+   cursor: "pointer",
+ },
+};
