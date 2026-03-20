@@ -94,25 +94,47 @@ export default function Home() {
      return;
    }
    try {
-     const res = await fetch(
-       "https://estacionamento-production-fe0e.up.railway.app/saida",
-       {
-         method: "POST",
-         headers: { "Content-Type": "application/json" },
-         body: JSON.stringify({
-           ticket_id: ticketId || null,
-           placa: placaSaida || null,
-           modo,
-           valor_manual: valorManual || null,
-         }),
-       }
-     );
-     const data = await res.json();
-     alert(`💰 Valor: R$ ${data.valor}`);
-   } catch {
-     alert("Erro na saída");
+const gerarSaida = async () => {
+ if (!ticketId && !placaSaida) {
+   alert("Digite ID ou placa");
+   return;
+ }
+ try {
+   const res = await fetch(
+     "https://estacionamento-production-fe0e.up.railway.app/saida",
+     {
+       method: "POST",
+       headers: { "Content-Type": "application/json" },
+       body: JSON.stringify({
+         ticket_id: ticketId || null,
+         placa: placaSaida || null,
+         modo,
+         valor_manual: valorManual || null,
+       }),
+     }
+   );
+   const data = await res.json();
+   // 🔍 DEBUG (importante pra você ver o retorno real)
+   console.log("RESPOSTA API:", data);
+   // ✅ Tenta pegar o valor de várias formas possíveis
+   const valor =
+     data?.valor ||
+     data?.price ||
+     data?.valor_total ||
+     data?.data?.valor ||
+     null;
+   if (valor !== null) {
+     alert(`💰 Valor: R$ ${valor}`);
+   } else if (data?.erro || data?.error) {
+     alert(`❌ ${data.erro || data.error}`);
+   } else {
+     alert("Erro ao calcular valor");
    }
- };
+ } catch (err) {
+   console.error(err);
+   alert("Erro na saída");
+ }
+};
  return (
 <div style={styles.container}>
 <div style={styles.tabs}>
