@@ -62,13 +62,10 @@ export default function Home() {
    buscarModelos();
  }, [marca]);
  // =========================
- // GERAR TICKET
+ // ENTRADA
  // =========================
  const gerarTicket = async () => {
-   if (!placa) {
-     alert("Digite a placa");
-     return;
-   }
+   if (!placa) return alert("Digite a placa");
    setLoading(true);
    try {
      const res = await fetch(
@@ -91,7 +88,7 @@ export default function Home() {
      );
      const data = await res.json();
      if (!res.ok) throw new Error();
-     alert(`✅ Ticket gerado! ID: ${data.ticket_id}`);
+     alert(`✅ Ticket: ${data.ticket_id}`);
      setPlaca("");
      setMarca("");
      setModelo("");
@@ -102,13 +99,11 @@ export default function Home() {
    }
  };
  // =========================
- // SAÍDA (CORRIGIDO)
+ // SAÍDA
  // =========================
  const gerarSaida = async () => {
-   if (!ticketId && !placaSaida) {
-     alert("Digite ID ou placa");
-     return;
-   }
+   if (!ticketId && !placaSaida)
+     return alert("Digite ID ou placa");
    try {
      const res = await fetch(
        "https://estacionamento-production-fe0e.up.railway.app/saida",
@@ -124,7 +119,6 @@ export default function Home() {
        }
      );
      const data = await res.json();
-     console.log("RESPOSTA API:", data);
      const valor =
        data?.valor ||
        data?.price ||
@@ -132,14 +126,11 @@ export default function Home() {
        data?.data?.valor ||
        null;
      if (valor !== null) {
-       alert(`💰 Valor: R$ ${valor}`);
-     } else if (data?.erro || data?.error) {
-       alert(`❌ ${data.erro || data.error}`);
+       alert(`💰 R$ ${valor}`);
      } else {
        alert("Erro ao calcular valor");
      }
-   } catch (err) {
-     console.error(err);
+   } catch {
      alert("Erro na saída");
    }
  };
@@ -148,6 +139,14 @@ export default function Home() {
  // =========================
  return (
 <div style={styles.container}>
+     {/* HEADER */}
+<div style={styles.header}>
+<h2>🚗 Estacionamento</h2>
+<button style={styles.relatorioBtn}>
+         📊 Relatórios
+</button>
+</div>
+     {/* TABS */}
 <div style={styles.tabs}>
 <button
          style={aba === "entrada" ? styles.activeTab : styles.tab}
@@ -162,6 +161,7 @@ export default function Home() {
          Saída
 </button>
 </div>
+     {/* ENTRADA */}
      {aba === "entrada" && (
 <div style={styles.card}>
 <h3>Entrada</h3>
@@ -179,9 +179,9 @@ export default function Home() {
                style={tipo === t ? styles.tipoAtivo : styles.tipoBtn}
 >
                {t === "carro_pequeno"
-                 ? "Carro Pequeno"
+                 ? "Pequeno"
                  : t === "carro_grande"
-                 ? "Carro Grande"
+                 ? "Grande"
                  : "Moto"}
 </button>
            ))}
@@ -211,10 +211,11 @@ export default function Home() {
            ))}
 </select>
 <button style={styles.btn} onClick={gerarTicket}>
-           {loading ? "Gerando..." : "Gerar Ticket"}
+           {loading ? "Gerando..." : "Registrar Entrada"}
 </button>
 </div>
      )}
+     {/* SAÍDA */}
      {aba === "saida" && (
 <div style={styles.card}>
 <h3>Saída</h3>
@@ -261,69 +262,95 @@ export default function Home() {
  );
 }
 // =========================
-// ESTILO
+// ESTILO TOP 🔥
 // =========================
 const styles: any = {
  container: {
    height: "100vh",
-   background: "#0f0f0f",
+   backgroundImage: "url('/bg.jpg')",
+   backgroundSize: "cover",
+   backgroundPosition: "center",
    display: "flex",
    flexDirection: "column",
    alignItems: "center",
    justifyContent: "center",
    color: "#fff",
  },
+ header: {
+   position: "absolute",
+   top: 20,
+   width: "90%",
+   display: "flex",
+   justifyContent: "space-between",
+   alignItems: "center",
+ },
+ relatorioBtn: {
+   background: "#FFD700",
+   border: "none",
+   padding: "10px 16px",
+   borderRadius: 8,
+   cursor: "pointer",
+   fontWeight: "bold",
+ },
  card: {
-   background: "#1a1a1a",
-   padding: 20,
-   borderRadius: 10,
-   width: 300,
+   backdropFilter: "blur(12px)",
+   background: "rgba(0,0,0,0.6)",
+   padding: 25,
+   borderRadius: 12,
+   width: 320,
    display: "flex",
    flexDirection: "column",
-   gap: 10,
+   gap: 12,
+   boxShadow: "0 0 20px rgba(0,0,0,0.5)",
  },
  input: {
-   padding: 10,
-   borderRadius: 6,
-   border: "1px solid #444",
+   padding: 12,
+   borderRadius: 8,
+   border: "none",
    background: "#fff",
    color: "#000",
  },
  btn: {
    background: "#FFD700",
-   padding: 12,
+   padding: 14,
    border: "none",
-   borderRadius: 6,
+   borderRadius: 8,
    cursor: "pointer",
    fontWeight: "bold",
  },
  tabs: {
    display: "flex",
    marginBottom: 20,
+   gap: 10,
  },
  tab: {
    padding: 10,
-   background: "#555",
+   background: "rgba(255,255,255,0.2)",
    border: "none",
+   color: "#fff",
    cursor: "pointer",
+   borderRadius: 8,
  },
  activeTab: {
    padding: 10,
    background: "#FFD700",
    border: "none",
+   color: "#000",
    cursor: "pointer",
+   borderRadius: 8,
  },
  tipoContainer: {
    display: "flex",
-   gap: 5,
+   gap: 6,
  },
  tipoBtn: {
    flex: 1,
    padding: 10,
-   background: "#555",
+   background: "rgba(255,255,255,0.2)",
    border: "none",
    color: "#fff",
    cursor: "pointer",
+   borderRadius: 8,
  },
  tipoAtivo: {
    flex: 1,
@@ -332,5 +359,6 @@ const styles: any = {
    border: "none",
    color: "#000",
    cursor: "pointer",
+   borderRadius: 8,
  },
 };
