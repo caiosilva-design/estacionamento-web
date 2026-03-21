@@ -26,8 +26,6 @@ export default function Dashboard() {
  const [loading, setLoading] = useState(false);
  const [ticketId, setTicketId] = useState("");
  const [placaSaida, setPlacaSaida] = useState("");
- const [modo, setModo] = useState<"auto" | "manual">("auto");
- const [valorManual, setValorManual] = useState("");
  const getApiTipo = () => {
    if (tipo === "moto") return "motos";
    return "carros";
@@ -75,16 +73,21 @@ export default function Dashboard() {
  // =========================
  const gerarTicket = async () => {
    if (!placa) return alert("Digite a placa");
+   const token = getToken();
+   if (!token) {
+     alert("Sessão expirada");
+     router.push("/");
+     return;
+   }
    setLoading(true);
    try {
-     const token = localStorage.getItem("token");
      const res = await fetch(
        "https://estacionamento-production-fe0e.up.railway.app/entrada",
        {
          method: "POST",
          headers: {
            "Content-Type": "application/json",
-           Authorization: `Bearer  ${token}`,
+           Authorization: `Bearer ${token}`,
          },
          body: JSON.stringify({
            placa,
@@ -100,7 +103,7 @@ export default function Dashboard() {
        }
      );
      const data = await res.json();
-     if (!res.ok) throw new Error();
+     if (!res.ok) throw new Error(data.erro);
      alert(`✅ Ticket: ${data.ticket_id}`);
      setPlaca("");
      setMarca("");
@@ -117,8 +120,13 @@ export default function Dashboard() {
  const gerarSaida = async () => {
    if (!ticketId && !placaSaida)
      return alert("Digite ID ou placa");
+   const token = getToken();
+   if (!token) {
+     alert("Sessão expirada");
+     router.push("/");
+     return;
+   }
    try {
-     const token = localStorage.getItem("token");
      const res = await fetch(
        "https://estacionamento-production-fe0e.up.railway.app/saida",
        {
@@ -130,8 +138,8 @@ export default function Dashboard() {
          body: JSON.stringify({
            ticket_id: ticketId || null,
            placa: placaSaida || null,
-           modo,
-           valor_manual: valorManual || null,
+           modo: "auto",
+           valor_manual: null,
          }),
        }
      );
@@ -267,7 +275,7 @@ export default function Dashboard() {
  );
 }
 // =========================
-// ESTILO
+// 🎨 ESTILO
 // =========================
 const styles: any = {
  container: {
