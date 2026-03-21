@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getToken, logout } from "../lib/auth";
+import { getToken, logout } from "../../lib/auth";
 import {
  BarChart,
  Bar,
