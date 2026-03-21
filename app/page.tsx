@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getToken, setToken } from "./lib/auth";
+import { getToken, setToken } from "../lib/auth";
 export default function LoginPage() {
  const router = useRouter();
  const [email, setEmail] = useState("");
