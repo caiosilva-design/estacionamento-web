@@ -77,13 +77,14 @@ export default function Dashboard() {
    if (!placa) return alert("Digite a placa");
    setLoading(true);
    try {
+     const token = localStorage.getItem("token");
      const res = await fetch(
        "https://estacionamento-production-fe0e.up.railway.app/entrada",
        {
          method: "POST",
          headers: {
            "Content-Type": "application/json",
-           Authorization: `Bearer ${getToken()}`,
+           Authorization: `Bearer  ${token}`,
          },
          body: JSON.stringify({
            placa,
@@ -117,13 +118,14 @@ export default function Dashboard() {
    if (!ticketId && !placaSaida)
      return alert("Digite ID ou placa");
    try {
+     const token = localStorage.getItem("token");
      const res = await fetch(
        "https://estacionamento-production-fe0e.up.railway.app/saida",
        {
          method: "POST",
          headers: {
            "Content-Type": "application/json",
-           Authorization: `Bearer ${getToken()}`,
+           Authorization: `Bearer ${token}`,
          },
          body: JSON.stringify({
            ticket_id: ticketId || null,
