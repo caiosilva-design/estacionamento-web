@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { getToken, logout } from "../lib/auth";
 import {
  BarChart,
  Bar,
@@ -11,31 +12,46 @@ import {
  CartesianGrid,
 } from "recharts";
 export default function Relatorios() {
+ const router = useRouter();
  const [dados, setDados] = useState<any>(null);
  const [dataInicio, setDataInicio] = useState("");
  const [dataFim, setDataFim] = useState("");
  const [tipo, setTipo] = useState("todos");
+ // 🔐 PROTEÇÃO
+ useEffect(() => {
+   const token = getToken();
+   if (!token) router.push("/");
+ }, []);
+ // =========================
+ // BUSCAR DADOS
+ // =========================
  const buscar = async () => {
-   const res = await fetch(
-     "https://estacionamento-production-fe0e.up.railway.app/relatorios",
-     {
-       method: "POST",
-       headers: {
-         "Content-Type": "application/json",
-       },
-       body: JSON.stringify({
-         data_inicio: dataInicio,
-         data_fim: dataFim,
-         tipo,
-       }),
-     }
-   );
-   const data = await res.json();
-   setDados(data);
+   try {
+     const res = await fetch(
+       "https://estacionamento-production-fe0e.up.railway.app/relatorios",
+       {
+         method: "POST",
+         headers: {
+           "Content-Type": "application/json",
+           Authorization: `Bearer ${getToken()}`,
+         },
+         body: JSON.stringify({
+           data_inicio: dataInicio,
+           data_fim: dataFim,
+           tipo,
+         }),
+       }
+     );
+     const data = await res.json();
+     setDados(data);
+   } catch {
+     alert("Erro ao buscar dados");
+   }
  };
  useEffect(() => {
    buscar();
  }, []);
+ // 🔥 PICO
  const pico =
    dados?.por_hora?.length > 0
      ? dados.por_hora.reduce((a: any, b: any) =>
@@ -48,9 +64,18 @@ export default function Relatorios() {
 <div style={styles.header}>
 <h1>📊 Relatórios</h1>
 <div style={{ display: "flex", gap: 10 }}>
-<Link href="/">
-<button style={styles.btnSecundario}>← Início</button>
-</Link>
+<button
+           style={styles.btnSecundario}
+           onClick={() => router.push("/dashboard")}
+>
+           ← Dashboard
+</button>
+<button
+           style={{ ...styles.btnSecundario, background: "#ef4444" }}
+           onClick={logout}
+>
+           Sair
+</button>
 </div>
 </div>
      {/* FILTROS */}
@@ -103,11 +128,11 @@ export default function Relatorios() {
 <h3>📈 Movimento por Hora</h3>
 <ResponsiveContainer width="100%" height={250}>
 <BarChart data={dados?.por_hora || []}>
-<CartesianGrid strokeDasharray="3 3" stroke="#444" />
-<XAxis dataKey="hora" stroke="#ccc" />
-<YAxis stroke="#ccc" />
+<CartesianGrid strokeDasharray="3 3" stroke="#333" />
+<XAxis dataKey="hora" stroke="#aaa" />
+<YAxis stroke="#aaa" />
 <Tooltip />
-<Bar dataKey="total" fill="#FFD700" radius={[6, 6, 0, 0]} />
+<Bar dataKey="total" fill="#6366f1" radius={[6, 6, 0, 0]} />
 </BarChart>
 </ResponsiveContainer>
 </div>
@@ -116,11 +141,11 @@ export default function Relatorios() {
 <h3>📅 Movimento por Dia</h3>
 <ResponsiveContainer width="100%" height={250}>
 <BarChart data={dados?.por_dia || []}>
-<CartesianGrid strokeDasharray="3 3" stroke="#444" />
-<XAxis dataKey="dia" stroke="#ccc" />
-<YAxis stroke="#ccc" />
+<CartesianGrid strokeDasharray="3 3" stroke="#333" />
+<XAxis dataKey="dia" stroke="#aaa" />
+<YAxis stroke="#aaa" />
 <Tooltip />
-<Bar dataKey="total" fill="#00E5A8" radius={[6, 6, 0, 0]} />
+<Bar dataKey="total" fill="#10b981" radius={[6, 6, 0, 0]} />
 </BarChart>
 </ResponsiveContainer>
 </div>
@@ -143,10 +168,13 @@ export default function Relatorios() {
 </div>
  );
 }
+// =========================
+// 🎨 ESTILO MAIS PROFISSIONAL
+// =========================
 const styles: any = {
  container: {
    minHeight: "100vh",
-   background: "#0f0f0f",
+   background: "#0b1220",
    padding: 20,
    color: "#fff",
  },
@@ -154,29 +182,31 @@ const styles: any = {
    display: "flex",
    justifyContent: "space-between",
    marginBottom: 20,
+   alignItems: "center",
  },
  filtros: {
    display: "flex",
    gap: 10,
    marginBottom: 20,
+   flexWrap: "wrap",
  },
  input: {
    padding: 10,
    borderRadius: 6,
-   border: "1px solid #444",
-   background: "#1a1a1a",
+   border: "1px solid #2a2f3a",
+   background: "#111827",
    color: "#fff",
  },
  btn: {
-   background: "#FFD700",
+   background: "#6366f1",
    padding: 10,
    border: "none",
    borderRadius: 6,
    cursor: "pointer",
-   fontWeight: "bold",
+   color: "#fff",
  },
  btnSecundario: {
-   background: "#333",
+   background: "#1f2937",
    padding: 10,
    border: "none",
    borderRadius: 6,
@@ -190,12 +220,12 @@ const styles: any = {
  },
  card: {
    flex: 1,
-   background: "#1a1a1a",
+   background: "#111827",
    padding: 20,
    borderRadius: 10,
  },
  chartCard: {
-   background: "#1a1a1a",
+   background: "#111827",
    padding: 20,
    borderRadius: 10,
    marginBottom: 20,
@@ -204,10 +234,10 @@ const styles: any = {
    display: "flex",
    justifyContent: "space-between",
    padding: "8px 0",
-   borderBottom: "1px solid #333",
+   borderBottom: "1px solid #1f2937",
  },
  pico: {
    marginBottom: 10,
-   color: "#FFD700",
+   color: "#f59e0b",
  },
 };
