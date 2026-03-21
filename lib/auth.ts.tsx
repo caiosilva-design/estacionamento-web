@@ -1,0 +1,12 @@
+// 🔐 TOKEN STORAGE
+export function getToken() {
+ if (typeof window === "undefined") return null;
+ return localStorage.getItem("token");
+}
+export function setToken(token: string) {
+ localStorage.setItem("token", token);
+}
+export function logout() {
+ localStorage.removeItem("token");
+ window.location.href = "/";
+}
