@@ -20,21 +20,28 @@ export default function Relatorios() {
  // 🔐 PROTEÇÃO
  useEffect(() => {
    const token = getToken();
-   if (!token) router.push("/");
+   if (!token) {
+     router.push("/");
+   }
  }, []);
  // =========================
  // BUSCAR DADOS
  // =========================
  const buscar = async () => {
    try {
-     const token = localStorage.getItem("token");
+     const token = getToken();
+     if (!token) {
+       alert("Sessão expirada");
+       router.push("/");
+       return;
+     }
      const res = await fetch(
        "https://estacionamento-production-fe0e.up.railway.app/relatorios",
        {
          method: "POST",
          headers: {
            "Content-Type": "application/json",
-           Authorization: `Bearer ${Token}`,
+           Authorization: `Bearer ${token}`, // ✅ CORRETO
          },
          body: JSON.stringify({
            data_inicio: dataInicio,
@@ -44,8 +51,12 @@ export default function Relatorios() {
        }
      );
      const data = await res.json();
+     if (!res.ok) {
+       throw new Error(data.erro || "Erro na API");
+     }
      setDados(data);
-   } catch {
+   } catch (err) {
+     console.error(err);
      alert("Erro ao buscar dados");
    }
  };
@@ -169,9 +180,7 @@ export default function Relatorios() {
 </div>
  );
 }
-// =========================
-// 🎨 ESTILO MAIS PROFISSIONAL
-// =========================
+// 🎨 ESTILO
 const styles: any = {
  container: {
    minHeight: "100vh",
