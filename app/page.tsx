@@ -30,12 +30,14 @@ export default function LoginPage() {
      );
      const data = await res.json();
      if (data.token) {
-       localStorage.setItem("token", data.token);
+       // ✅ agora usando helper correto
+       setToken(data.token);
        router.push("/dashboard");
      } else {
        alert(data.erro || "Erro no login");
      }
-   } catch {
+   } catch (err) {
+     console.error(err);
      alert("Erro ao conectar API");
    } finally {
      setLoading(false);
