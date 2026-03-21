@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getToken, logout } from "../lib/auth";
+import { getToken, logout } from "../../lib/auth";
 export default function Dashboard() {
  const router = useRouter();
  // =========================
