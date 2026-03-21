@@ -196,7 +196,7 @@ export default function Home() {
 >
 <option value="">Marca</option>
            {marcas.map((m) => (
-<option key={m.codigo} value={m.codigo}>
+<option key={m.codigo} value={m.nome}>
                {m.nome}
 </option>
            ))}
