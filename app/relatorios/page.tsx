@@ -27,13 +27,14 @@ export default function Relatorios() {
  // =========================
  const buscar = async () => {
    try {
+     const token = localStorage.getItem("token");
      const res = await fetch(
        "https://estacionamento-production-fe0e.up.railway.app/relatorios",
        {
          method: "POST",
          headers: {
            "Content-Type": "application/json",
-           Authorization: `Bearer ${getToken()}`,
+           Authorization: `Bearer ${Token}`,
          },
          body: JSON.stringify({
            data_inicio: dataInicio,
