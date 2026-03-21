@@ -142,8 +142,11 @@ export default function Home() {
      {/* HEADER */}
 <div style={styles.header}>
 <h2>🚗 Estacionamento</h2>
-<button style={styles.relatorioBtn}>
-         📊 Relatórios
+<button
+ style={styles.relatorioBtn}
+ onClick={() => window.location.href = "/relatorios"}
+>
+ 📊 Relatórios
 </button>
 </div>
      {/* TABS */}
