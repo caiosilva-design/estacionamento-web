@@ -175,26 +175,43 @@ const gerarTicket = async () => {
 // SAÍDA
 // =========================
 const gerarSaida = async () => {
-  const token = getToken();
-  if (!token) return router.push("/");
-  const res = await fetch(
-    "https://estacionamento-production-fe0e.up.railway.app/saida",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        ticket_id: ticketId || null,
-        placa: placaSaida || null,
-        modo: "auto",
-      }),
-    }
-  );
-  const data = await res.json();
-  if (!data?.valor) return alert(data?.erro || "Erro");
-  setPreviewSaida(data);
+ const token = getToken();
+ if (!token) return router.push("/");
+ if (!ticketId && !placaSaida) {
+   alert("Digite o ID ou a placa");
+   return;
+ }
+ try {
+   const res = await fetch(
+     "https://estacionamento-production-fe0e.up.railway.app/saida",
+     {
+       method: "POST",
+       headers: {
+         "Content-Type": "application/json",
+         Authorization: `Bearer ${token}`,
+       },
+       body: JSON.stringify({
+         ticket_id: ticketId || null,
+         placa: placaSaida || null,
+       }),
+     }
+   );
+   const data = await res.json();
+   // 🔥 TRATAR ERRO DA API
+   if (data?.erro) {
+     alert(data.erro);
+     return;
+   }
+   // 🔥 VALIDAÇÃO CORRETA
+   if (data?.valor === undefined || data?.valor === null) {
+     alert("Erro ao calcular valor");
+     return;
+   }
+   setPreviewSaida(data);
+ } catch (err) {
+   console.log(err);
+   alert("Erro na comunicação com o servidor");
+ }
 };
 // =========================
 // CONFIRMAR SAÍDA
