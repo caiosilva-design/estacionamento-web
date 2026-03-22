@@ -9,7 +9,7 @@ useEffect(() => {
  if (!token) router.push("/");
 }, []);
 // =========================
-// 🧾 IMPRESSÃO (CORRIGIDO)
+// 🧾 IMPRESSÃO
 // =========================
 function imprimirTicket({ tipo, placa, marca, modelo, entrada, saida, valor }: any) {
  const dataEntrada = entrada ? new Date(entrada) : new Date();
@@ -60,7 +60,7 @@ const [ultimoTicket, setUltimoTicket] = useState<any>(null);
 const [carrosPatio, setCarrosPatio] = useState<any[]>([]);
 const getApiTipo = () => (tipo === "moto" ? "motos" : "carros");
 // =========================
-// 🆕 BUSCAR PÁTIO
+// 🚗 PÁTIO
 // =========================
 useEffect(() => {
  if (aba !== "saida") return;
@@ -172,7 +172,7 @@ const gerarTicket = async () => {
  }
 };
 // =========================
-// SAÍDA (CORRIGIDO)
+// SAÍDA
 // =========================
 const gerarSaida = async () => {
 const token = getToken();
@@ -201,32 +201,23 @@ try {
     alert(data?.erro || "Erro ao finalizar saída");
     return;
   }
-  if (data?.valor === undefined || data?.valor === null) {
-    alert("Erro ao calcular valor");
-    return;
-  }
   setPreviewSaida(data);
-} catch (err) {
-  console.log(err);
+} catch {
   alert("Erro na comunicação com o servidor");
 }
 };
 // =========================
-// CONFIRMAR SAÍDA (CORRIGIDO)
+// CONFIRMAR SAÍDA
 // =========================
 const confirmarSaida = () => {
  if (!previewSaida) return;
  imprimirTicket({
    tipo: "saida",
    placa: previewSaida.placa || placaSaida,
-   marca: previewSaida.marca || "-",
-   modelo: previewSaida.modelo || "-",
-   entrada: previewSaida.entrada
-     ? new Date(previewSaida.entrada).toLocaleString()
-     : "-",
-   saida: previewSaida.saida
-     ? new Date(previewSaida.saida).toLocaleString()
-     : new Date().toLocaleString(),
+   marca: previewSaida.marca,
+   modelo: previewSaida.modelo,
+   entrada: previewSaida.entrada,
+   saida: previewSaida.saida,
    valor: previewSaida.valor,
  });
  setPreviewSaida(null);
@@ -238,6 +229,7 @@ const confirmarSaida = () => {
 // =========================
 return (
 <div style={styles.container}>
+{/* HEADER */}
 <div style={styles.header}>
 <h2>🚗 Estacionamento</h2>
 <div style={{ display: "flex", gap: 10 }}>
@@ -252,6 +244,7 @@ onClick={logout}
 </button>
 </div>
 </div>
+{/* TABS */}
 <div style={styles.tabs}>
 <button style={aba === "entrada" ? styles.activeTab : styles.tab} onClick={() => setAba("entrada")}>
 Entrada
@@ -260,6 +253,7 @@ Entrada
 Saída
 </button>
 </div>
+{/* ENTRADA */}
 {aba === "entrada" && (
 <div style={styles.card}>
 <h3>Entrada</h3>
@@ -297,48 +291,65 @@ style={styles.input}
 </button>
 </div>
 )}
+{/* SAÍDA */}
 {aba === "saida" && (
 <div style={styles.card}>
 <h3>Saída</h3>
 <input placeholder="ID do Ticket" value={ticketId} onChange={(e) => setTicketId(e.target.value)} style={styles.input} />
 <input placeholder="OU Placa" value={placaSaida} onChange={(e) => setPlacaSaida(e.target.value)} style={styles.input} />
 <button style={styles.btn} onClick={gerarSaida}>Finalizar</button>
+{/* PÁTIO */}
 <div style={{ marginTop: 10 }}>
 <h4 style={{ fontSize: 14 }}>🚗 No pátio</h4>
 {carrosPatio.map((c, i) => (
 <div
 key={i}
-onClick={() => {
-setPlacaSaida(c.placa);
-setTicketId("");
-}}
 style={{
 padding: 8,
 marginTop: 5,
 background: "rgba(255,255,255,0.1)",
 borderRadius: 6,
-cursor: "pointer",
-fontSize: 13,
+display: "flex",
+justifyContent: "space-between",
+alignItems: "center"
 }}
 >
-{c.placa} - {c.marca}
+<span>{c.placa} - {c.marca}</span>
+<button
+style={{
+background: "#FFD700",
+border: "none",
+padding: "4px 8px",
+borderRadius: 6,
+cursor: "pointer",
+fontSize: 12
+}}
+onClick={() => {
+setPlacaSaida(c.placa);
+setTicketId("");
+}}
+>
+Selecionar
+</button>
 </div>
 ))}
 </div>
 </div>
 )}
+{/* MODAL */}
 {previewSaida && (
 <div style={styles.modal}>
 <div style={styles.modalBox}>
 <h3>Confirmar Saída</h3>
-<p>{previewSaida.placa || placaSaida}</p>
-<p>{previewSaida.marca || "-"}</p>
-<p>{previewSaida.modelo || "-"}</p>
+<p>{previewSaida.placa}</p>
+<p>{previewSaida.marca}</p>
+<p>{previewSaida.modelo}</p>
 <h2>R$ {previewSaida.valor}</h2>
 <button style={styles.btn} onClick={confirmarSaida}>Confirmar</button>
 </div>
 </div>
 )}
+{/* REPRINT */}
 {ultimoTicket && (
 <button style={styles.reprint} onClick={() => imprimirTicket(ultimoTicket)}>
 🖨 Reimprimir
@@ -348,7 +359,7 @@ fontSize: 13,
 );
 }
 // =========================
-// 🎨 ESTILO (INALTERADO)
+// 🎨 ESTILO
 // =========================
 const styles: any = {
 container: { height: "100vh", backgroundImage: "url('/bg.jpg')", backgroundSize: "cover", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#fff" },
