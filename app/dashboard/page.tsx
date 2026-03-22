@@ -9,12 +9,10 @@ const router = useRouter();
 // =========================
 useEffect(() => {
   const token = getToken();
-  if (!token) {
-    router.push("/");
-  }
+  if (!token) router.push("/");
 }, []);
 // =========================
-// 🧾 FUNÇÃO DE IMPRESSÃO
+// 🧾 IMPRESSÃO
 // =========================
 function imprimirTicket({ tipo, placa, marca, modelo, entrada, saida, valor }: any) {
  const win = window.open("", "_blank");
@@ -28,37 +26,33 @@ function imprimirTicket({ tipo, placa, marca, modelo, entrada, saida, valor }: a
            text-align: center;
            padding: 20px;
          }
-         h2 { margin-bottom: 10px; }
-         .linha { margin: 6px 0; font-size: 14px; }
-         .destaque { font-size: 18px; font-weight: bold; margin-top: 10px; }
-         hr { margin: 10px 0; }
+         .linha { margin: 6px 0; }
+         .destaque { font-size: 18px; font-weight: bold; }
 </style>
 </head>
 <body>
 <h2>🚗 ESTACIONAMENTO</h2>
 <hr/>
-<div class="linha">Placa: <b>${placa}</b></div>
-<div class="linha">Marca: ${marca || "-"}</div>
-<div class="linha">Modelo: ${modelo || "-"}</div>
+<div class="linha"><b>${placa}</b></div>
+<div class="linha">${marca || "-"}</div>
+<div class="linha">${modelo || "-"}</div>
 <hr/>
        ${
          tipo === "entrada"
            ? `
-<div class="linha">Entrada:</div>
+<div class="linha">Entrada</div>
 <div class="destaque">${entrada}</div>
-<div class="linha">Fechamento: 18:00</div>
+<div>Fecha às 18:00</div>
          `
            : `
-<div class="linha">Entrada:</div>
-<div class="linha">${entrada}</div>
-<div class="linha">Saída:</div>
-<div class="linha">${saida}</div>
+<div>Entrada: ${entrada}</div>
+<div>Saída: ${saida}</div>
 <hr/>
-<div class="destaque">💰 R$ ${valor}</div>
+<div class="destaque">R$ ${valor}</div>
          `
        }
 <hr/>
-<p>Obrigado pela preferência 🙏</p>
+<p>Obrigado 🙏</p>
 </body>
 </html>
  `);
@@ -78,6 +72,9 @@ const [modelos, setModelos] = useState<any[]>([]);
 const [loading, setLoading] = useState(false);
 const [ticketId, setTicketId] = useState("");
 const [placaSaida, setPlacaSaida] = useState("");
+// =========================
+// API FIPE
+// =========================
 const getApiTipo = () => {
   if (tipo === "moto") return "motos";
   return "carros";
@@ -155,7 +152,7 @@ const gerarTicket = async () => {
       }
     );
     const data = await res.json();
-    if (!res.ok) throw new Error(data.erro);
+    if (!res.ok) throw new Error();
     imprimirTicket({
       tipo: "entrada",
       placa,
@@ -163,7 +160,7 @@ const gerarTicket = async () => {
       modelo,
       entrada: new Date().toLocaleString(),
     });
-    alert(`✅ Ticket: ${data.ticket_id}`);
+    alert(`Ticket: ${data.ticket_id}`);
     setPlaca("");
     setMarca("");
     setModelo("");
@@ -211,9 +208,9 @@ const gerarSaida = async () => {
         saida: new Date(data.saida).toLocaleString(),
         valor: data.valor,
       });
-      alert(`💰 R$ ${data.valor}`);
+      alert(`R$ ${data.valor}`);
     } else {
-      alert("Erro ao calcular valor");
+      alert("Erro");
     }
   } catch {
     alert("Erro na saída");
@@ -224,7 +221,6 @@ const gerarSaida = async () => {
 // =========================
 return (
 <div style={styles.container}>
-    {/* HEADER */}
 <div style={styles.header}>
 <h2>🚗 Estacionamento</h2>
 <div style={{ display: "flex", gap: 10 }}>
@@ -236,7 +232,6 @@ return (
 </button>
 </div>
 </div>
-    {/* TABS */}
 <div style={styles.tabs}>
 <button style={aba === "entrada" ? styles.activeTab : styles.tab} onClick={() => setAba("entrada")}>
 Entrada
@@ -245,11 +240,10 @@ Entrada
 Saída
 </button>
 </div>
-    {/* ENTRADA */}
 {aba === "entrada" && (
 <div style={styles.card}>
 <h3>Entrada</h3>
-<input placeholder="Placa" value={placa} onChange={(e) => setPlaca(e.target.value)} style={styles.input} />
+<input placeholder="Placa" value={placa} onChange={(e)=>setPlaca(e.target.value)} style={styles.input}/>
 <div style={styles.tipoContainer}>
 {["carro_pequeno","carro_grande","moto"].map((t)=>(
 <button key={t} onClick={()=>setTipo(t)} style={tipo===t?styles.tipoAtivo:styles.tipoBtn}>
@@ -260,7 +254,7 @@ Saída
 <select value={marca} onChange={(e)=>setMarca(e.target.value)} style={styles.input}>
 <option value="">Marca</option>
 {marcas.map((m)=>(
-<option key={m.codigo} value={m.nome}>{m.nome}</option>
+<option key={m.codigo} value={m.nome}>{m.nome}</option>   {/* 🔥 CORREÇÃO AQUI */}
 ))}
 </select>
 <select value={modelo} onChange={(e)=>setModelo(e.target.value)} style={styles.input}>
@@ -274,7 +268,6 @@ Saída
 </button>
 </div>
 )}
-    {/* SAÍDA */}
 {aba === "saida" && (
 <div style={styles.card}>
 <h3>Saída</h3>
@@ -287,7 +280,7 @@ Saída
 );
 }
 // =========================
-// ESTILO
+// 🎨 ESTILO
 // =========================
 const styles: any = {
 container: {
