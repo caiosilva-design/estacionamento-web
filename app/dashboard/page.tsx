@@ -57,32 +57,7 @@ export default function Dashboard() {
  const [placaSaida, setPlacaSaida] = useState("");
  const [previewSaida, setPreviewSaida] = useState<any>(null);
  const [ultimoTicket, setUltimoTicket] = useState<any>(null);
- const [carrosPatio, setCarrosPatio] = useState<any[]>([]);
  const getApiTipo = () => (tipo === "moto" ? "motos" : "carros");
- // =========================
- // 🚗 PÁTIO
- // =========================
- useEffect(() => {
-   if (aba !== "saida") return;
-   async function buscarPatio() {
-     try {
-       const token = getToken();
-       const res = await fetch(
-         "https://estacionamento-production-fe0e.up.railway.app/abertos",
-         {
-           headers: {
-             Authorization: `Bearer ${token}`,
-           },
-         }
-       );
-       const data = await res.json();
-       setCarrosPatio(Array.isArray(data) ? data : []);
-     } catch {
-       setCarrosPatio([]);
-     }
-   }
-   buscarPatio();
- }, [aba]);
  // =========================
  // MARCAS
  // =========================
@@ -296,45 +271,8 @@ export default function Dashboard() {
 <input placeholder="ID do Ticket" value={ticketId} onChange={(e) => setTicketId(e.target.value)} style={styles.input} />
 <input placeholder="OU Placa" value={placaSaida} onChange={(e) => setPlacaSaida(e.target.value)} style={styles.input} />
 <button style={styles.btn} onClick={gerarSaida}>Finalizar</button>
-         {/* PÁTIO FUNCIONANDO */}
-<div style={{ marginTop: 10 }}>
-<h4 style={{ fontSize: 14 }}>🚗 No pátio</h4>
-           {carrosPatio.map((c, i) => (
-<div
-               key={i}
-               style={{
-                 padding: 8,
-                 marginTop: 5,
-                 background: "rgba(255,255,255,0.1)",
-                 borderRadius: 6,
-                 display: "flex",
-                 justifyContent: "space-between",
-                 alignItems: "center"
-               }}
->
-<span>{c.placa} - {c.marca}</span>
-<button
-                 style={{
-                   background: "#FFD700",
-                   border: "none",
-                   padding: "4px 8px",
-                   borderRadius: 6,
-                   cursor: "pointer",
-                   fontSize: 12
-                 }}
-                 onClick={() => {
-                   setPlacaSaida(c.placa);
-                   setTicketId("");
-                 }}
->
-                 Selecionar
-</button>
-</div>
-           ))}
-</div>
 </div>
      )}
-     {/* MODAL */}
      {previewSaida && (
 <div style={styles.modal}>
 <div style={styles.modalBox}>
