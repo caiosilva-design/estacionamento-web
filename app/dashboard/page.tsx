@@ -9,9 +9,7 @@ export default function Dashboard() {
  // =========================
  useEffect(() => {
    const token = getToken();
-   if (!token) {
-     router.push("/");
-   }
+   if (!token) router.push("/");
  }, []);
  // =========================
  // STATE
@@ -26,10 +24,67 @@ export default function Dashboard() {
  const [loading, setLoading] = useState(false);
  const [ticketId, setTicketId] = useState("");
  const [placaSaida, setPlacaSaida] = useState("");
- const getApiTipo = () => {
-   if (tipo === "moto") return "motos";
-   return "carros";
- };
+ const getApiTipo = () => (tipo === "moto" ? "motos" : "carros");
+ // =========================
+ // 🧾 IMPRIMIR TICKET
+ // =========================
+ function imprimirTicket({
+   tipo,
+   placa,
+   marca,
+   modelo,
+   entrada,
+   saida,
+   valor,
+ }: any) {
+   const win = window.open("", "_blank");
+   win.document.write(`
+<html>
+<head>
+<title>Ticket</title>
+<style>
+           body {
+             font-family: monospace;
+             text-align: center;
+             padding: 20px;
+           }
+           h2 { margin-bottom: 10px; }
+           .linha { margin: 6px 0; font-size: 14px; }
+           .destaque { font-size: 18px; font-weight: bold; margin-top: 10px; }
+           hr { margin: 10px 0; }
+</style>
+</head>
+<body>
+<h2>🚗 ESTACIONAMENTO</h2>
+<hr/>
+<div class="linha">Placa: <b>${placa}</b></div>
+<div class="linha">Marca: ${marca || "-"}</div>
+<div class="linha">Modelo: ${modelo || "-"}</div>
+<hr/>
+         ${
+           tipo === "entrada"
+             ? `
+<div class="linha">Entrada:</div>
+<div class="destaque">${entrada}</div>
+<div class="linha">Fechamento: 18:00</div>
+           `
+             : `
+<div class="linha">Entrada:</div>
+<div class="linha">${entrada}</div>
+<div class="linha">Saída:</div>
+<div class="linha">${saida}</div>
+<hr/>
+<div class="destaque">💰 R$ ${valor}</div>
+           `
+         }
+<hr/>
+<p>Obrigado pela preferência 🙏</p>
+</body>
+</html>
+   `);
+   win.document.close();
+   win.print();
+ }
  // =========================
  // MARCAS
  // =========================
@@ -74,11 +129,7 @@ export default function Dashboard() {
  const gerarTicket = async () => {
    if (!placa) return alert("Digite a placa");
    const token = getToken();
-   if (!token) {
-     alert("Sessão expirada");
-     router.push("/");
-     return;
-   }
+   if (!token) return router.push("/");
    setLoading(true);
    try {
      const res = await fetch(
@@ -103,7 +154,15 @@ export default function Dashboard() {
        }
      );
      const data = await res.json();
-     if (!res.ok) throw new Error(data.erro);
+     if (!res.ok) throw new Error();
+     const agora = new Date().toLocaleString();
+     imprimirTicket({
+       tipo: "entrada",
+       placa,
+       marca,
+       modelo,
+       entrada: agora,
+     });
      alert(`✅ Ticket: ${data.ticket_id}`);
      setPlaca("");
      setMarca("");
@@ -121,11 +180,7 @@ export default function Dashboard() {
    if (!ticketId && !placaSaida)
      return alert("Digite ID ou placa");
    const token = getToken();
-   if (!token) {
-     alert("Sessão expirada");
-     router.push("/");
-     return;
-   }
+   if (!token) return router.push("/");
    try {
      const res = await fetch(
        "https://estacionamento-production-fe0e.up.railway.app/saida",
@@ -138,18 +193,19 @@ export default function Dashboard() {
          body: JSON.stringify({
            ticket_id: ticketId || null,
            placa: placaSaida || null,
-           modo: "auto",
-           valor_manual: null,
          }),
        }
      );
      const data = await res.json();
-     const valor =
-       data?.valor ||
-       data?.price ||
-       data?.valor_total ||
-       null;
+     const valor = data?.valor;
      if (valor !== null) {
+       imprimirTicket({
+         tipo: "saida",
+         placa: placaSaida,
+         entrada: new Date(data.entrada).toLocaleString(),
+         saida: new Date(data.saida).toLocaleString(),
+         valor,
+       });
        alert(`💰 R$ ${valor}`);
      } else {
        alert("Erro ao calcular valor");
@@ -163,7 +219,6 @@ export default function Dashboard() {
  // =========================
  return (
 <div style={styles.container}>
-     {/* HEADER */}
 <div style={styles.header}>
 <h2>🚗 Estacionamento</h2>
 <div style={{ display: "flex", gap: 10 }}>
@@ -181,7 +236,6 @@ export default function Dashboard() {
 </button>
 </div>
 </div>
-     {/* TABS */}
 <div style={styles.tabs}>
 <button
          style={aba === "entrada" ? styles.activeTab : styles.tab}
@@ -196,7 +250,6 @@ export default function Dashboard() {
          Saída
 </button>
 </div>
-     {/* ENTRADA */}
      {aba === "entrada" && (
 <div style={styles.card}>
 <h3>Entrada</h3>
@@ -206,51 +259,11 @@ export default function Dashboard() {
            onChange={(e) => setPlaca(e.target.value)}
            style={styles.input}
          />
-<div style={styles.tipoContainer}>
-           {["carro_pequeno", "carro_grande", "moto"].map((t) => (
-<button
-               key={t}
-               onClick={() => setTipo(t)}
-               style={tipo === t ? styles.tipoAtivo : styles.tipoBtn}
->
-               {t === "carro_pequeno"
-                 ? "Pequeno"
-                 : t === "carro_grande"
-                 ? "Grande"
-                 : "Moto"}
-</button>
-           ))}
-</div>
-<select
-           value={marca}
-           onChange={(e) => setMarca(e.target.value)}
-           style={styles.input}
->
-<option value="">Marca</option>
-           {marcas.map((m) => (
-<option key={m.codigo} value={m.codigo}>
-               {m.nome}
-</option>
-           ))}
-</select>
-<select
-           value={modelo}
-           onChange={(e) => setModelo(e.target.value)}
-           style={styles.input}
->
-<option value="">Modelo</option>
-           {modelos.map((m) => (
-<option key={m.codigo} value={m.nome}>
-               {m.nome}
-</option>
-           ))}
-</select>
 <button style={styles.btn} onClick={gerarTicket}>
            {loading ? "Gerando..." : "Registrar Entrada"}
 </button>
 </div>
      )}
-     {/* SAÍDA */}
      {aba === "saida" && (
 <div style={styles.card}>
 <h3>Saída</h3>
@@ -275,13 +288,12 @@ export default function Dashboard() {
  );
 }
 // =========================
-// 🎨 ESTILO
+// ESTILO
 // =========================
 const styles: any = {
  container: {
    height: "100vh",
-   backgroundImage: "url('/bg.jpg')",
-   backgroundSize: "cover",
+   background: "#0f172a",
    display: "flex",
    flexDirection: "column",
    alignItems: "center",
@@ -304,8 +316,7 @@ const styles: any = {
    fontWeight: "bold",
  },
  card: {
-   backdropFilter: "blur(12px)",
-   background: "rgba(0,0,0,0.6)",
+   background: "#1e293b",
    padding: 25,
    borderRadius: 12,
    width: 320,
@@ -333,32 +344,12 @@ const styles: any = {
  },
  tab: {
    padding: 10,
-   background: "rgba(255,255,255,0.2)",
+   background: "#334155",
    border: "none",
    color: "#fff",
    borderRadius: 8,
  },
  activeTab: {
-   padding: 10,
-   background: "#FFD700",
-   border: "none",
-   color: "#000",
-   borderRadius: 8,
- },
- tipoContainer: {
-   display: "flex",
-   gap: 6,
- },
- tipoBtn: {
-   flex: 1,
-   padding: 10,
-   background: "rgba(255,255,255,0.2)",
-   border: "none",
-   color: "#fff",
-   borderRadius: 8,
- },
- tipoAtivo: {
-   flex: 1,
    padding: 10,
    background: "#FFD700",
    border: "none",
