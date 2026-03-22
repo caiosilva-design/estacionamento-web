@@ -5,40 +5,41 @@ import { getToken, logout } from "../../lib/auth";
 export default function Dashboard() {
 const router = useRouter();
 useEffect(() => {
-  const token = getToken();
-  if (!token) router.push("/");
+ const token = getToken();
+ if (!token) router.push("/");
 }, []);
 // =========================
-// 🧾 IMPRESSÃO
+// 🧾 IMPRESSÃO (CORRIGIDO)
 // =========================
 function imprimirTicket({ tipo, placa, marca, modelo, entrada, saida, valor }: any) {
-  const dataEntrada = new Date(entrada);
-  const dia = dataEntrada.getDay();
-  let fechamento = "18:00";
-  if (dia === 6) fechamento = "16:00";
-  const win = window.open("", "_blank");
-  win.document.write(`
+ const dataEntrada = entrada ? new Date(entrada) : new Date();
+ const dia = dataEntrada.getDay();
+ let fechamento = "18:00";
+ if (dia === 6) fechamento = "16:00";
+ const win = window.open("", "_blank");
+ if (!win) return;
+ win.document.write(`
 <html>
 <body style="font-family: monospace; text-align:center; padding:20px">
 <h2>🚗 ESTACIONAMENTO</h2>
 <hr/>
-<div>Placa: <b>${placa}</b></div>
+<div>Placa: <b>${placa || "-"}</b></div>
 <div>Marca: ${marca || "-"}</div>
 <div>Modelo: ${modelo || "-"}</div>
 <hr/>
 ${
- tipo === "entrada"
-   ? `<div>Entrada: ${entrada}</div><div>Fechamento: ${fechamento}</div>`
-   : `<div>Entrada: ${entrada}</div><div>Saída: ${saida}</div><hr/><h2>💰 R$ ${valor}</h2>`
+tipo === "entrada"
+  ? `<div>Entrada: ${entrada || "-"}</div><div>Fechamento: ${fechamento}</div>`
+  : `<div>Entrada: ${entrada || "-"}</div><div>Saída: ${saida || "-"}</div><hr/><h2>💰 R$ ${valor ?? "-"}</h2>`
 }
 <hr/>
 <p>Obrigado 🙏</p>
 </body>
 </html>
-  `);
-  win.document.close();
-  win.print();
-  setUltimoTicket({ tipo, placa, marca, modelo, entrada, saida, valor });
+ `);
+ win.document.close();
+ win.print();
+ setUltimoTicket({ tipo, placa, marca, modelo, entrada, saida, valor });
 }
 // =========================
 // STATE
@@ -54,7 +55,6 @@ const [modelos, setModelos] = useState<any[]>([]);
 const [loading, setLoading] = useState(false);
 const [ticketId, setTicketId] = useState("");
 const [placaSaida, setPlacaSaida] = useState("");
-// 🆕
 const [previewSaida, setPreviewSaida] = useState<any>(null);
 const [ultimoTicket, setUltimoTicket] = useState<any>(null);
 const [carrosPatio, setCarrosPatio] = useState<any[]>([]);
@@ -63,127 +63,76 @@ const getApiTipo = () => (tipo === "moto" ? "motos" : "carros");
 // 🆕 BUSCAR PÁTIO
 // =========================
 useEffect(() => {
-  if (aba !== "saida") return;
-  async function buscarPatio() {
-     try {
-        const token = getToken();
-        const res = await fetch(
-          "https://estacionamento-production-fe0e.up.railway.app/abertos",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        const data = await res.json();
-        setCarrosPatio(data || []);
-     } catch {
-        setCarrosPatio([]);
-     }
-  }
-  buscarPatio();
+ if (aba !== "saida") return;
+ async function buscarPatio() {
+    try {
+       const token = getToken();
+       const res = await fetch(
+         "https://estacionamento-production-fe0e.up.railway.app/abertos",
+         {
+           headers: {
+             Authorization: `Bearer ${token}`,
+           },
+         }
+       );
+       const data = await res.json();
+       setCarrosPatio(Array.isArray(data) ? data : []);
+    } catch {
+       setCarrosPatio([]);
+    }
+ }
+ buscarPatio();
 }, [aba]);
 // =========================
 // MARCAS
 // =========================
 useEffect(() => {
-  async function buscarMarcas() {
-    try {
-      const res = await fetch(
-        `https://parallelum.com.br/fipe/api/v1/${getApiTipo()}/marcas`
-      );
-      const data = await res.json();
-      setMarcas(data || []);
-    } catch {
-      setMarcas([]);
-    }
-  }
-  buscarMarcas();
-  setMarcaCodigo("");
-  setMarcaNome("");
-  setModelo("");
-  setModelos([]);
+ async function buscarMarcas() {
+   try {
+     const res = await fetch(
+       `https://parallelum.com.br/fipe/api/v1/${getApiTipo()}/marcas`
+     );
+     const data = await res.json();
+     setMarcas(data || []);
+   } catch {
+     setMarcas([]);
+   }
+ }
+ buscarMarcas();
+ setMarcaCodigo("");
+ setMarcaNome("");
+ setModelo("");
+ setModelos([]);
 }, [tipo]);
 // =========================
 // MODELOS
 // =========================
 useEffect(() => {
-  if (!marcaCodigo) return;
-  async function buscarModelos() {
-    try {
-      const res = await fetch(
-        `https://parallelum.com.br/fipe/api/v1/${getApiTipo()}/marcas/${marcaCodigo}/modelos`
-      );
-      const data = await res.json();
-      setModelos(data?.modelos || []);
-    } catch {
-      setModelos([]);
-    }
-  }
-  buscarModelos();
+ if (!marcaCodigo) return;
+ async function buscarModelos() {
+   try {
+     const res = await fetch(
+       `https://parallelum.com.br/fipe/api/v1/${getApiTipo()}/marcas/${marcaCodigo}/modelos`
+     );
+     const data = await res.json();
+     setModelos(data?.modelos || []);
+   } catch {
+     setModelos([]);
+   }
+ }
+ buscarModelos();
 }, [marcaCodigo]);
 // =========================
 // ENTRADA
 // =========================
 const gerarTicket = async () => {
-  if (!placa) return alert("Digite a placa");
-  const token = getToken();
-  if (!token) return router.push("/");
-  setLoading(true);
-  try {
-    const res = await fetch(
-      "https://estacionamento-production-fe0e.up.railway.app/entrada",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          placa,
-          marca: marcaNome,
-          modelo,
-          tipo_veiculo:
-            tipo === "carro_pequeno"
-              ? "pequeno"
-              : tipo === "carro_grande"
-              ? "grande"
-              : "moto",
-        }),
-      }
-    );
-    const data = await res.json();
-    if (!res.ok) throw new Error();
-    imprimirTicket({
-      tipo: "entrada",
-      placa,
-      marca: marcaNome,
-      modelo,
-      entrada: new Date().toLocaleString(),
-    });
-    setPlaca("");
-    setMarcaCodigo("");
-    setMarcaNome("");
-    setModelo("");
-  } catch {
-    alert("Erro ao gerar ticket");
-  } finally {
-    setLoading(false);
-  }
-};
-// =========================
-// SAÍDA
-// =========================
-const gerarSaida = async () => {
+ if (!placa) return alert("Digite a placa");
  const token = getToken();
  if (!token) return router.push("/");
- if (!ticketId && !placaSaida) {
-   alert("Digite o ID ou a placa");
-   return;
- }
+ setLoading(true);
  try {
    const res = await fetch(
-     "https://estacionamento-production-fe0e.up.railway.app/saida",
+     "https://estacionamento-production-fe0e.up.railway.app/entrada",
      {
        method: "POST",
        headers: {
@@ -191,44 +140,98 @@ const gerarSaida = async () => {
          Authorization: `Bearer ${token}`,
        },
        body: JSON.stringify({
-         ticket_id: ticketId || null,
-         placa: placaSaida || null,
+         placa,
+         marca: marcaNome,
+         modelo,
+         tipo_veiculo:
+           tipo === "carro_pequeno"
+             ? "pequeno"
+             : tipo === "carro_grande"
+             ? "grande"
+             : "moto",
        }),
      }
    );
    const data = await res.json();
-   // 🔥 TRATAR ERRO DA API
-   if (data?.erro) {
-     alert(data.erro);
-     return;
-   }
-   // 🔥 VALIDAÇÃO CORRETA
-   if (data?.valor === undefined || data?.valor === null) {
-     alert("Erro ao calcular valor");
-     return;
-   }
-   setPreviewSaida(data);
- } catch (err) {
-   console.log(err);
-   alert("Erro na comunicação com o servidor");
+   if (!res.ok || data?.erro) throw new Error();
+   imprimirTicket({
+     tipo: "entrada",
+     placa,
+     marca: marcaNome,
+     modelo,
+     entrada: new Date().toLocaleString(),
+   });
+   setPlaca("");
+   setMarcaCodigo("");
+   setMarcaNome("");
+   setModelo("");
+ } catch {
+   alert("Erro ao gerar ticket");
+ } finally {
+   setLoading(false);
  }
 };
 // =========================
-// CONFIRMAR SAÍDA
+// SAÍDA (CORRIGIDO)
+// =========================
+const gerarSaida = async () => {
+const token = getToken();
+if (!token) return router.push("/");
+if (!ticketId && !placaSaida) {
+  alert("Digite o ID ou a placa");
+  return;
+}
+try {
+  const res = await fetch(
+    "https://estacionamento-production-fe0e.up.railway.app/saida",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        ticket_id: ticketId || null,
+        placa: placaSaida || null,
+      }),
+    }
+  );
+  const data = await res.json();
+  if (!res.ok || data?.erro) {
+    alert(data?.erro || "Erro ao finalizar saída");
+    return;
+  }
+  if (data?.valor === undefined || data?.valor === null) {
+    alert("Erro ao calcular valor");
+    return;
+  }
+  setPreviewSaida(data);
+} catch (err) {
+  console.log(err);
+  alert("Erro na comunicação com o servidor");
+}
+};
+// =========================
+// CONFIRMAR SAÍDA (CORRIGIDO)
 // =========================
 const confirmarSaida = () => {
-  imprimirTicket({
-    tipo: "saida",
-    placa: previewSaida.placa,
-    marca: previewSaida.marca,
-    modelo: previewSaida.modelo,
-    entrada: new Date(previewSaida.entrada).toLocaleString(),
-    saida: new Date(previewSaida.saida).toLocaleString(),
-    valor: previewSaida.valor,
-  });
-  setPreviewSaida(null);
-  setTicketId("");
-  setPlacaSaida("");
+ if (!previewSaida) return;
+ imprimirTicket({
+   tipo: "saida",
+   placa: previewSaida.placa || placaSaida,
+   marca: previewSaida.marca || "-",
+   modelo: previewSaida.modelo || "-",
+   entrada: previewSaida.entrada
+     ? new Date(previewSaida.entrada).toLocaleString()
+     : "-",
+   saida: previewSaida.saida
+     ? new Date(previewSaida.saida).toLocaleString()
+     : new Date().toLocaleString(),
+   valor: previewSaida.valor,
+ });
+ setPreviewSaida(null);
+ setTicketId("");
+ setPlacaSaida("");
 };
 // =========================
 // UI
@@ -300,7 +303,6 @@ style={styles.input}
 <input placeholder="ID do Ticket" value={ticketId} onChange={(e) => setTicketId(e.target.value)} style={styles.input} />
 <input placeholder="OU Placa" value={placaSaida} onChange={(e) => setPlacaSaida(e.target.value)} style={styles.input} />
 <button style={styles.btn} onClick={gerarSaida}>Finalizar</button>
-{/* 🆕 LISTA */}
 <div style={{ marginTop: 10 }}>
 <h4 style={{ fontSize: 14 }}>🚗 No pátio</h4>
 {carrosPatio.map((c, i) => (
@@ -329,9 +331,9 @@ fontSize: 13,
 <div style={styles.modal}>
 <div style={styles.modalBox}>
 <h3>Confirmar Saída</h3>
-<p>{previewSaida.placa}</p>
-<p>{previewSaida.marca}</p>
-<p>{previewSaida.modelo}</p>
+<p>{previewSaida.placa || placaSaida}</p>
+<p>{previewSaida.marca || "-"}</p>
+<p>{previewSaida.modelo || "-"}</p>
 <h2>R$ {previewSaida.valor}</h2>
 <button style={styles.btn} onClick={confirmarSaida}>Confirmar</button>
 </div>
