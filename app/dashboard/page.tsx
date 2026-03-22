@@ -260,7 +260,7 @@ Saída
 <select value={marca} onChange={(e)=>setMarca(e.target.value)} style={styles.input}>
 <option value="">Marca</option>
 {marcas.map((m)=>(
-<option key={m.codigo} value={m.codigo}>{m.nome}</option>
+<option key={m.codigo} value={m.nome}>{m.nome}</option>
 ))}
 </select>
 <select value={modelo} onChange={(e)=>setModelo(e.target.value)} style={styles.input}>
